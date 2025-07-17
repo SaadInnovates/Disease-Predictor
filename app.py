@@ -3,7 +3,7 @@ import joblib
 import pandas as pd
 
 # 🔄 Load trained model and preprocessing assets
-model = joblib.load("catboost_custom_model.pkl")
+model = joblib.load("catboost_disease_model.pkl")
 symptom_weights = joblib.load("symptom_weights.pkl")
 all_symptoms = joblib.load("all_symptoms.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
