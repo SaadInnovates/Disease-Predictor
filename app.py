@@ -51,7 +51,7 @@ raw_symptoms = [
 st.title("🩺 Disease Prediction System")
 
 selected_symptoms = st.multiselect(
-    "Select your symptoms (min 7, max 17)", 
+    "Select your symptoms (min 5, max 17)", 
     raw_symptoms,
     help="Hold Ctrl (or ⌘ on Mac) to select multiple symptoms."
 )
@@ -59,8 +59,8 @@ selected_symptoms = st.multiselect(
 if st.button("Predict Disease"):
     num_symptoms = len(selected_symptoms)
 
-    if num_symptoms < 7:
-        st.warning("⚠️ Please select **at least 7 symptoms**.")
+    if num_symptoms < 5:
+        st.warning("⚠️ Please select **at least 5 symptoms**.")
     elif num_symptoms > 17:
         st.warning("⚠️ Please select **no more than 17 symptoms**.")
     else:
