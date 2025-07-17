@@ -1,41 +1,43 @@
 import streamlit as st
-import joblib
 import pandas as pd
+import joblib
 
-# 🔄 Load trained model and preprocessing assets
-model = joblib.load("catboost_disease_model.pkl")
+# Load model and encoders
+model = joblib.load("catboost_custom_model.pkl")
+label_encoder = joblib.load("label_encoder.pkl")
 symptom_weights = joblib.load("symptom_weights.pkl")
 all_symptoms = joblib.load("all_symptoms.pkl")
-label_encoder = joblib.load("label_encoder.pkl")
 
-# 🧠 Preprocess symptoms
-def clean_text(text):
-    return text.strip().replace("_", "").replace(" ", "").lower()
+# Preprocess symptom input
+def clean_symptom(sym):
+    return sym.strip().replace("_", "").replace(" ", "").lower()
 
-def encode_input(symptoms):
-    feature_dict = {sym: 0 for sym in all_symptoms}
+def encode_input(symptoms, all_symptoms, symptom_weights):
+    features = {s: 0 for s in all_symptoms}
     for sym in symptoms:
-        clean_sym = clean_text(sym)
-        if clean_sym in symptom_weights:
-            feature_dict[clean_sym] = symptom_weights[clean_sym]
-    return pd.DataFrame([feature_dict])
+        clean = clean_symptom(sym)
+        if clean in features:
+            features[clean] = symptom_weights.get(clean, 1)
+    return pd.DataFrame([features])
 
-# 🚀 Streamlit UI
-st.title("🩺 Disease Prediction from Symptoms")
-st.markdown("Select symptoms below and click **Predict Disease**.")
+# Title
+st.title("🩺 Disease Prediction System (CatBoost)")
 
-# 👇 Multiselect dropdown
+# Symptom selection
+st.markdown("### Select up to 10 symptoms:")
 selected_symptoms = st.multiselect(
     "Choose symptoms:",
-    options=sorted(symptom_weights.keys()),
-    help="Start typing to filter symptoms..."
+    options=sorted(list(set(all_symptoms))),  # show symptoms in dropdown
+    max_selections=10,
+    help="You can select up to 10 symptoms."
 )
 
-if st.button("🔍 Predict Disease"):
-    if not selected_symptoms:
-        st.warning("Please select at least one symptom.")
+# Predict button
+if st.button("Predict Disease"):
+    if len(selected_symptoms) == 0:
+        st.warning("⚠️ Please select at least one symptom.")
     else:
-        x_input = encode_input(selected_symptoms)
-        pred_encoded = model.predict(x_input)[0]
-        pred_disease = label_encoder.inverse_transform([int(pred_encoded)])[0]
-        st.success(f"🧾 Predicted Disease: **{pred_disease}**")
+        input_df = encode_input(selected_symptoms, all_symptoms, symptom_weights)
+        pred_encoded = model.predict(input_df)[0]
+        pred_disease = label_encoder.inverse_transform([pred_encoded])[0]
+        st.success(f"🩺 Predicted Disease: **{pred_disease}**")
