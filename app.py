@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 
 # Load model and encoders
-model = joblib.load("catboost_custom_model.pkl")
+model = joblib.load("catboost_disease_model.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 symptom_weights = joblib.load("symptom_weights.pkl")
 all_symptoms = joblib.load("all_symptoms.pkl")
