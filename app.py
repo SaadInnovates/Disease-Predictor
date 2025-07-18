@@ -1,4 +1,4 @@
-import streamlit as st
+mport streamlit as st
 import pandas as pd
 import joblib
 
@@ -8,7 +8,11 @@ label_encoder = joblib.load("label_encoder.pkl")
 all_symptoms = joblib.load("all_symptoms.pkl")
 symptom_weights = joblib.load("symptom_weights.pkl")
 
-# ✅ Preprocessing function
+# ✅ Load CSVs
+desc_df = pd.read_csv("symptom_Description.csv")
+precaution_df = pd.read_csv("symptom_precaution.csv")
+
+# ✅ Helper functions
 def clean_symptom(symptom):
     return symptom.strip().replace("_", "").replace(" ", "").lower()
 
@@ -20,7 +24,23 @@ def encode_input(selected_symptoms, all_symptoms, symptom_weights):
             feature_dict[cleaned] = symptom_weights[cleaned]
     return pd.DataFrame([feature_dict])
 
-# ✅ Raw symptoms from dataset
+def get_description(disease_name):
+    match = desc_df[desc_df["Disease"].str.lower() == disease_name.lower()]
+    return match["Description"].values[0] if not match.empty else "No description available."
+
+def get_precautions(disease_name):
+    match = precaution_df[precaution_df["Disease"].str.lower() == disease_name.lower()]
+    if not match.empty:
+        return [
+            match["Precaution_1"].values[0],
+            match["Precaution_2"].values[0],
+            match["Precaution_3"].values[0],
+            match["Precaution_4"].values[0]
+        ]
+    else:
+        return ["Not available"] * 4
+
+# ✅ Symptoms list (same as your full list)
 raw_symptoms = [
     'itching', 'skin_rash', 'nodal_skin_eruptions', 'continuous_sneezing', 'shivering', 'chills', 'joint_pain',
     'stomach_pain', 'acidity', 'ulcers_on_tongue', 'muscle_wasting', 'vomiting', 'burning_micturition',
@@ -46,10 +66,8 @@ raw_symptoms = [
     'painful_walking', 'pus_filled_pimples', 'blackheads', 'scurring', 'skin_peeling', 'silver_like_dusting',
     'small_dents_in_nails', 'inflammatory_nails', 'blister', 'red_sore_around_nose', 'yellow_crust_ooze', 'prognosis'
 ]
-
 # ✅ Streamlit UI
 st.title("🩺 Disease Prediction System")
-
 selected_symptoms = st.multiselect(
     "Select your symptoms (min 5, max 17)", 
     raw_symptoms,
@@ -65,6 +83,32 @@ if st.button("Predict Disease"):
         st.warning("⚠️ Please select **no more than 17 symptoms**.")
     else:
         x_input = encode_input(selected_symptoms, all_symptoms, symptom_weights)
-        pred_encoded = model.predict(x_input)[0]
-        pred_disease = label_encoder.inverse_transform([int(pred_encoded)])[0]
-        st.success(f"🩺 Predicted Disease: **{pred_disease}**")
+        probs = model.predict_proba(x_input)[0]
+
+        # Get top 5 predictions
+        top_indices = probs.argsort()[-5:][::-1]
+        top_diseases = label_encoder.inverse_transform(top_indices)
+
+        st.subheader("🔍 Based on your symptoms, you may have one of the following diseases:")
+
+        for i in range(5):
+            disease = top_diseases[i]
+            probability = probs[top_indices[i]]
+            description = get_description(disease)
+            precautions = get_precautions(disease)
+
+            st.markdown(f"""
+            ### {i+1}. 🦠 **{disease}**
+            - 🔢 Probability: **{probability:.2f}**
+            - 📝 Description: {description}
+            - 🛡️ **Precautions:**
+                1. {precautions[0]}
+                2. {precautions[1]}
+                3. {precautions[2]}
+                4. {precautions[3]}
+            """)
+
+
+        
+        st.info("ℹ️ These are AI-based predictions and suggestions. Please consult a doctor for an official diagnosis.")
+
