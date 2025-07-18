@@ -69,7 +69,7 @@ raw_symptoms = [
 # ✅ Streamlit UI
 st.title("🩺 Disease Prediction System")
 selected_symptoms = st.multiselect(
-    "Select your symptoms (min 5, max 17)", 
+    "Select your symptoms (min 3, max 17)", 
     raw_symptoms,
     help="Hold Ctrl (or ⌘ on Mac) to select multiple symptoms."
 )
